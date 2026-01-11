@@ -1,0 +1,57 @@
+﻿<Window x:Class="HoneyKhaalaProject.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Month Selector" Height="420" Width="520"
+        Background="#F3F6FA" WindowStartupLocation="CenterScreen"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:HoneyKhaalaProject.VM;assembly=HoneyKhaalaProject.VM"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainVM, IsDesignTimeCreatable=True}">
+
+
+    <Grid>
+        <StackPanel Margin="20" VerticalAlignment="Top" HorizontalAlignment="Center">
+            <TextBlock Text="Select Month" FontSize="22" FontWeight="Bold" Margin="4" Foreground="#0F172A"/>
+            <TextBlock Text="Click a previous month to open its data file. Click Current Month to open the calculation page." 
+                       FontSize="12" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+            <!-- Previous 5 months -->
+            <ItemsControl Margin="0,8,0,12" ItemsSource="{Binding PreviousMonths}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="96" Height="96" Margin="6"
+                                            FontWeight="SemiBold"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Background="White"
+                                            BorderThickness="1"
+                                            Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.OpenMonthFileCommand}"
+                                            CommandParameter="{Binding}"
+                                            Tag="{Binding}">
+                            <TextBlock TextAlignment="Center">
+                                <Run Text="{Binding Mode=OneWay, StringFormat=MMMM}" />
+                                <LineBreak/>
+                                <Run Text="{Binding Mode=OneWay, StringFormat=yyyy}" />
+                            </TextBlock>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Current month big button -->
+            <Border Background="White" CornerRadius="10" Padding="14" Width="420" Effect="{DynamicResource {x:Static SystemParameters.DropShadow}}">
+                <StackPanel>
+                    <TextBlock Text="Current Month" FontSize="12" Foreground="#6B7280"/>
+                    <Button Content="{Binding CurrentMonth}" Height="64" Margin="0,8,0,0" FontSize="16" FontWeight="SemiBold" Click="CurrentMonth_Click"
+                            Background="#2563EB" Foreground="White" BorderThickness="0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</Window>

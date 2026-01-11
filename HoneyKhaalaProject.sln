@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoneyKhaalaProject", "HoneyKhaalaProject\HoneyKhaalaProject.csproj", "{8A21F320-F1DF-4559-AFC2-75730B921315}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoneyKhaalaProject.VM", "HoneyKhaalaProject.VM\HoneyKhaalaProject.VM.csproj", "{01CFA61E-876E-47DD-A2FA-9AE14771B1BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8A21F320-F1DF-4559-AFC2-75730B921315}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A21F320-F1DF-4559-AFC2-75730B921315}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A21F320-F1DF-4559-AFC2-75730B921315}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A21F320-F1DF-4559-AFC2-75730B921315}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01CFA61E-876E-47DD-A2FA-9AE14771B1BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01CFA61E-876E-47DD-A2FA-9AE14771B1BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01CFA61E-876E-47DD-A2FA-9AE14771B1BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01CFA61E-876E-47DD-A2FA-9AE14771B1BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {41124EA9-98A4-47A7-8598-BD81EC0B7403}
+	EndGlobalSection
+EndGlobal
