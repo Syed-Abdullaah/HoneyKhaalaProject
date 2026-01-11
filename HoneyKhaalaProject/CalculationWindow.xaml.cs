@@ -7,6 +7,8 @@
 using HoneyKhaalaProject.VM;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -15,10 +17,8 @@ namespace HoneyKhaalaProject
 {
     public partial class CalculationWindow : Window
     {
-        private readonly string storageFolder;
-        const double MaxBarPixelWidth = 320.0;
-
         string totalDisplay = "$0.00";
+
         public string TotalDisplay
         {
             get => totalDisplay;
@@ -31,22 +31,37 @@ namespace HoneyKhaalaProject
 
         public ObservableCollection<Investor> Investors { get; } = new ObservableCollection<Investor>();
 
+        [Obsolete("For designer support only. Use other overload for normal construction.")]
+        public CalculationWindow()
+        {
+            InitializeComponent();
+            CreateDummyInvestors();
+        }
+
         public CalculationWindow(string storageFolder)
         {
             InitializeComponent();
-            this.storageFolder = storageFolder;
             this.DataContext = this;
-            
 
+            CreateDummyInvestors();
+        }
+
+        private void CreateDummyInvestors()
+        {
             // start with two example rows to make UI friendlier
-            Investors.Add(new Investor { Name = "Investor A", AmountString = "10000" });
-            Investors.Add(new Investor { Name = "Investor B", AmountString = "5000" });
+            Investors.Add(new Investor { Name = "Investor A", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor B", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor C", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor D", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor E", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor F", Amount = 10000 });
+            Investors.Add(new Investor { Name = "Investor G", Amount = 10000 });
         }
 
         private void AddInvestor_Click(object sender, RoutedEventArgs e)
         {
             int next = Investors.Count + 1;
-            Investors.Add(new Investor { Name = $"Investor {next}", AmountString = "0" });
+            Investors.Add(new Investor { Name = $"Investor {next}", Amount = 0 });
         }
 
         private void RemoveInvestor_Click(object sender, RoutedEventArgs e)
@@ -59,14 +74,6 @@ namespace HoneyKhaalaProject
 
         private void Calculate_Click(object sender, RoutedEventArgs e)
         {
-            // parse amounts (silent zero for invalid)
-            foreach (var inv in Investors)
-            {
-                if (!double.TryParse(inv.AmountString, out double v))
-                    v = 0;
-                inv.Amount = Math.Max(0, v);
-            }
-
             double total = Investors.Sum(i => i.Amount);
             TotalDisplay = total.ToString("C2");
 
@@ -78,9 +85,34 @@ namespace HoneyKhaalaProject
                 else
                     inv.Percentage = 0;
 
-                inv.DisplayAmount = inv.Amount.ToString("C2");
-                inv.DisplayPercentage = inv.Percentage.ToString("F1") + " %";
-                inv.BarWidth = (inv.Percentage / 100.0) * MaxBarPixelWidth;
+                
+            }
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            var storageFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months");
+            var file = Path.Combine(storageFolder, $"{DateTime.Now:yyyy-MM}.txt");
+            JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };
+            var data = System.Text.Json.JsonSerializer.Serialize(Investors.ToArray(), options);
+            File.WriteAllText(file, data);
+        }
+
+        private void Open_Click(object sender, RoutedEventArgs e)
+        {
+            var storageFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months");
+            var file = Path.Combine(storageFolder, $"{DateTime.Now:yyyy-MM}.txt");
+            var data = File.ReadAllText(file);
+            var data2 = JsonSerializer.Deserialize<Investor[]>(data);
+
+
+            if (data2 != null)
+            {
+                Investors.Clear();
+                foreach (var item in data2)
+                {
+                    Investors.Add(item);
+                }
             }
         }
     }
