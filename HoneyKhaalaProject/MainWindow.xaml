@@ -45,13 +45,11 @@
             </ItemsControl>
 
             <!-- Current month big button -->
-            <Border Background="White" CornerRadius="10" Padding="14" Width="420" Effect="{DynamicResource {x:Static SystemParameters.DropShadow}}">
-                <StackPanel>
-                    <TextBlock Text="Current Month" FontSize="12" Foreground="#6B7280"/>
-                    <Button Content="{Binding CurrentMonth}" Height="64" Margin="0,8,0,0" FontSize="16" FontWeight="SemiBold" Click="CurrentMonth_Click"
-                            Background="#2563EB" Foreground="White" BorderThickness="0" />
-                </StackPanel>
-            </Border>
+            <Button x:Name="CurrentMonthButton"
+                    Content="{Binding CurrentMonth}"
+                    Height="64" Margin="0,8,0,0" FontSize="16" FontWeight="SemiBold"
+                    Click="CurrentMonth_Click"
+                    Background="#2563EB" Foreground="White" BorderThickness="0" />
         </StackPanel>
     </Grid>
 </Window>

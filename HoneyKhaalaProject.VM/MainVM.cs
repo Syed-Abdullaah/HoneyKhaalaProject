@@ -1,13 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace HoneyKhaalaProject.VM
 {
@@ -25,18 +22,19 @@ namespace HoneyKhaalaProject.VM
         public MainVM()
         {
             StorageFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months");
+            if (!Directory.Exists(storageFolder)) Directory.CreateDirectory(storageFolder);
 
-            if (!Directory.Exists(storageFolder))
-                Directory.CreateDirectory(storageFolder);
+            RefreshMonths();
+        }
 
-
+        public void RefreshMonths()
+        {
             CurrentMonth = $"{DateTime.Now.ToString("MMMM yyyy", CultureInfo.CurrentCulture)} — Open Calculation";
 
-            // previous 5 months (most recent first)
-            for (int i = 1; i <= 7; i++)
+            PreviousMonths.Clear();
+            for (int i = 1; i <= 11; i++)
             {
-                var m = DateTime.Now.AddMonths(-i);
-                previousMonths.Add(m);
+                PreviousMonths.Add(DateTime.Now.AddMonths(-i));
             }
         }
 
@@ -44,13 +42,8 @@ namespace HoneyKhaalaProject.VM
         private void OpenMonthFile(DateTime month)
         {
             var file = Path.Combine(StorageFolder, $"{month:yyyy-MM}.txt");
-
-            if (!File.Exists(file))
-            {
-                File.WriteAllText(file,"");
-            }
-                Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
+            if (!File.Exists(file)) File.WriteAllText(file, "");
+            Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
         }
-
     }
 }
