@@ -19,9 +19,12 @@ namespace HoneyKhaalaProject.VM
         string amountString = "0";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof (HalfAmount))]
         double profitShare;
 
         [ObservableProperty]
         string displayProfit = "$0.00";
+
+        public double HalfAmount => ProfitShare / 2;
     }
 }

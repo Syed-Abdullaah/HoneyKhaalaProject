@@ -138,6 +138,8 @@
                                             <TextBox Text="{Binding ProfitString, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="14" HorizontalContentAlignment="Center" ToolTip="Enter profit for this business (number or currency)"/>
                                             <TextBlock Text="{Binding ProfitDisplay}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
                                                        ToolTip="Formatted profit for this business"/>
+                                            <TextBlock Text="{Binding ProfitDisplay}" FontSize="20" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                                       ToolTip="Total investment in this buisness"/>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -169,12 +171,20 @@
                                                     <StackPanel Orientation="Horizontal"/>
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
+                                            
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <StackPanel Margin="16,0,16,0" Width="170">
+                                                    <StackPanel Margin="16,0,16,0">
                                                         <TextBlock Text="{Binding BusinessName}" FontSize="11" Foreground="#6B7280" TextAlignment="Center" ToolTip="Business for this contribution"/>
                                                         <TextBox Text="{Binding AmountString, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center" ToolTip="Enter amount contributed to this business (numbers only)"/>
-                                                        <TextBlock Text="{Binding DisplayProfit}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0" ToolTip="Profit share for this investor in this business"/>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding DisplayProfit}" FontSize="11" ToolTip="Profit share for this investor in this business"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding HalfAmount, StringFormat=C2}" TextAlignment="Right" FontSize="11" HorizontalAlignment="Right" ToolTip="Company share"/>
+                                                        </Grid>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
