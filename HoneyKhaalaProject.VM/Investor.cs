@@ -12,5 +12,12 @@ namespace HoneyKhaalaProject.VM
 
         [ObservableProperty]
         double percentage;
+
+        // new properties for profit distribution and display
+        [ObservableProperty]
+        double profitShare;
+
+        [ObservableProperty]
+        string displayProfit = "$0.00";
     }
 }

@@ -6,7 +6,7 @@
 		xmlns:vm="clr-namespace:HoneyKhaalaProject.VM;assembly=HoneyKhaalaProject.VM"
 		xmlns:local="clr-namespace:HoneyKhaalaProject;assembly=HoneyKhaalaProject"
         mc:Ignorable="d"
-        Title="Investment Calculation" Height="1000" Width="850"
+        Title="Investment Calculation" Height="1000" Width="950"
         Background="#F3F6FA" WindowStartupLocation="CenterOwner"
         d:DataContext="{d:DesignInstance Type=local:CalculationWindow,IsDesignTimeCreatable=True}" HorizontalContentAlignment="Center">
 
@@ -100,11 +100,11 @@
             <Button Content="Save" Width="140" Click="Save_Click" Background="Green" Foreground="White" Margin="14,10,0,0"/>
             <Button Content="Open" Width="140" Click="Open_Click" Background="Brown" Foreground="White" Margin="14,10,0,0"/>
 
-            <TextBlock Text="Results :" FontSize="16" FontWeight="Bold" Margin="14,10,0,0" />
-			<StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                <TextBlock Text="Total: " Foreground="#6B7280" VerticalAlignment="Center" Margin="5,12,0,0"/>
-                <TextBlock Text="{Binding TotalDisplay}" DataContext="{Binding }" FontWeight="Bold" VerticalAlignment="Center" Margin="0,12,0,0"/>
-			</StackPanel>
+            <TextBlock Text="Total Investment:" FontSize="14" FontWeight="Bold" Margin="18,12,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding TotalInvestmentDisplay}" FontSize="14" FontWeight="Bold" Margin="0,12,6,0" VerticalAlignment="Center"/>
+
+            <TextBlock Text="Profit:" FontSize="14" FontWeight="Bold" Margin="12,12,6,0" VerticalAlignment="Center"/>
+            <TextBox Text="{Binding ProfitString, UpdateSourceTrigger=PropertyChanged}" Width="100" Height="28" Margin="0,10,0,0" VerticalAlignment="Center"/>
 		</StackPanel>
 
 		<ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="2">
@@ -140,7 +140,7 @@
 			<Border Background="White" CornerRadius="12" Padding="14" BorderBrush="Black" BorderThickness="5">
 				<StackPanel>
                     <TextBlock Text="Percentages" FontSize="30" FontFamily="Bahnschrift" HorizontalAlignment="Center"/>
-					<ListBox ItemsSource="{Binding Investors}" Margin="0,10,0,0" Width="410" >
+					<ListBox ItemsSource="{Binding Investors}" Margin="0,10,0,0" Width="410">
 						<ListBox.ItemTemplate>
 							<DataTemplate>
 								<StackPanel Margin="0,8,0,8">
@@ -159,7 +159,7 @@
 												</LinearGradientBrush>
 											</ProgressBar.Background>
 										</ProgressBar>
-										<TextBlock Text="{Binding Percentage, StringFormat='F1%'}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Right" Margin="8,0,8,0" VerticalAlignment="Center"/>
+										<TextBlock Text="{Binding Percentage, StringFormat={}{0:F2} %}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Right" Margin="8,0,8,0" VerticalAlignment="Center"/>
 									</Grid>
 								</StackPanel>
 							</DataTemplate>

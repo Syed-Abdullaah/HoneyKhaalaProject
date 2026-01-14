@@ -1,6 +1,7 @@
 ﻿using HoneyKhaalaProject.VM;
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace HoneyKhaalaProject
@@ -44,6 +45,16 @@ namespace HoneyKhaalaProject
                 calc.Owner = this;
                 calc.ShowDialog();
                 VM.RefreshMonths(); // refresh after dialog in case user saved
+            }
+        }
+
+        private void PreviousMonth_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Button b && b.Tag is DateTime month && VM != null)
+            {
+                var calc = new CalculationWindow(VM.StorageFolder, month) { Owner = this };
+                calc.ShowDialog();
+                VM.RefreshMonths();
             }
         }
     }
