@@ -41,7 +41,7 @@ namespace HoneyKhaalaProject.VM
         [RelayCommand]
         private void OpenMonthFile(DateTime month)
         {
-            var file = Path.Combine(StorageFolder, $"{month:yyyy-MM}.txt");
+            var file = Path.Combine(StorageFolder, $"{month:yyyy-MM}.json");
             if (!File.Exists(file)) File.WriteAllText(file, "");
             Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
         }

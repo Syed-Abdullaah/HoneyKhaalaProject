@@ -21,15 +21,7 @@ namespace HoneyKhaalaProject
 {
     public partial class CalculationWindow : Window, INotifyPropertyChanged
     {
-        // force dollar formatting for display/parsing
         readonly CultureInfo DisplayCulture = CultureInfo.GetCultureInfo("en-US");
-
-        string totalDisplay = "$0.00";
-        public string TotalDisplay
-        {
-            get => totalDisplay;
-            set { totalDisplay = value; OnPropertyChanged(nameof(TotalDisplay)); }
-        }
 
         string totalInvestmentDisplay = "$0.00";
         public string TotalInvestmentDisplay
@@ -38,61 +30,40 @@ namespace HoneyKhaalaProject
             set { totalInvestmentDisplay = value; OnPropertyChanged(nameof(TotalInvestmentDisplay)); }
         }
 
-        string profitString = "0";
-        public string ProfitString
-        {
-            get => profitString;
-            set { profitString = value; OnPropertyChanged(nameof(ProfitString)); }
-        }
-
         public ObservableCollection<Investor> Investors { get; } = new ObservableCollection<Investor>();
+
+        // fixed business list (not editable per your requirement)
+        public ObservableCollection<BusinessEntry> Businesses { get; } = new ObservableCollection<BusinessEntry>();
+
+        private readonly string _storage_folder;
+        private DateTime _editingMonth;
+        private string selectedMonthDisplay = "";
         public string SelectedMonthDisplay
         {
             get => selectedMonthDisplay;
-            set
-            {
-                if (selectedMonthDisplay != value)
-                {
-                    selectedMonthDisplay = value;
-                    OnPropertyChanged(nameof(SelectedMonthDisplay));
-                }
-            }
+            set { selectedMonthDisplay = value; OnPropertyChanged(nameof(SelectedMonthDisplay)); }
         }
-        private readonly string _storageFolder;
-        private DateTime _editingMonth;
-        // Add this property to the CalculationWindow class to fix CS0103
-        private string selectedMonthDisplay = "";
 
-        [Obsolete("For designer support only. Use other overload for normal construction.")]
         public CalculationWindow()
         {
-            _storageFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months");
-            Directory.CreateDirectory(_storageFolder);
+            _storage_folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months");
+            Directory.CreateDirectory(_storage_folder);
 
             InitializeComponent();
             this.DataContext = this;
 
+            InitializeBusinesses();
             _editingMonth = DateTime.Now;
             SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
             CreateDummyInvestors();
         }
 
-        public CalculationWindow(string storageFolder)
+        public CalculationWindow(string storageFolder) : this()
         {
-            _storageFolder = string.IsNullOrWhiteSpace(storageFolder)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HoneyKhaalaProject", "Months")
-                : storageFolder;
-            Directory.CreateDirectory(_storageFolder);
-
-            InitializeComponent();
-            this.DataContext = this;
-
-            _editingMonth = DateTime.Now;
-            // Replace this line in the obsolete constructor:
-            // SelecteditMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
-            // with:
-            SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
-            CreateDummyInvestors();
+            if (!string.IsNullOrWhiteSpace(storageFolder))
+            {
+                Directory.CreateDirectory(storageFolder);
+            }
         }
 
         public CalculationWindow(string storageFolder, DateTime month) : this(storageFolder)
@@ -102,19 +73,44 @@ namespace HoneyKhaalaProject
             LoadMonthFile(month);
         }
 
+        void InitializeBusinesses()
+        {
+            var list = new []
+            {
+                "Right Choice Enterprise ltd",
+                "Clinical Diagnostic Services Ltd",
+                "Evergreen Estates Manchester ltd",
+                "Multinational Foods ltd",
+                "Programmers hut"
+            };
+
+            Businesses.Clear();
+            foreach (var b in list)
+                Businesses.Add(new BusinessEntry { Id = Guid.NewGuid().ToString(), Name = b, ProfitString = "0", ProfitDisplay = "$0.00" });
+        }
+
         private void CreateDummyInvestors()
         {
-            Investors.Add(new Investor { Name = "Investor A", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor B", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor C", Amount = 10000 });
-
+            AddInvestor("Investor A", 10000);
+            AddInvestor("Investor B", 10000);
+            AddInvestor("Investor C", 10000);
             UpdateTotalsAndDisplays();
+        }
+
+        void AddInvestor(string name, double defaultAmount)
+        {
+            var inv = new Investor { Name = name, Amount = defaultAmount };
+            foreach (var b in Businesses)
+            {
+                inv.Contributions.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0, AmountString = "0" });
+            }
+            Investors.Add(inv);
         }
 
         private void AddInvestor_Click(object sender, RoutedEventArgs e)
         {
             int next = Investors.Count + 1;
-            Investors.Add(new Investor { Name = $"Investor {next}", Amount = 0 });
+            AddInvestor($"Investor {next}", 0);
             UpdateTotalsAndDisplays();
         }
 
@@ -129,28 +125,80 @@ namespace HoneyKhaalaProject
 
         private void Calculate_Click(object sender, RoutedEventArgs e)
         {
-            // compute totals
-            UpdateTotalsAndDisplays();
-
-            // parse profit allowing currency symbol (use explicit culture)
-            if (!double.TryParse(ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double profit))
-                profit = 0;
-
-            // distribute profit based on percentage (percentage is 0..100)
+            // 1) parse contributions' text values into numeric Amount before calculations
             foreach (var inv in Investors)
             {
-                inv.ProfitShare = inv.Percentage > 0 ? inv.Percentage / 100.0 * profit : 0;
+                foreach (var c in inv.Contributions)
+                {
+                    if (!double.TryParse(c.AmountString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double v))
+                        v = 0;
+                    c.Amount = v;
+                }
+
+                // NEW: update investor legacy Amount to the sum of their contributions so UI and percentage use the correct total
+                inv.Amount = inv.Contributions.Sum(c => c.Amount);
+            }
+
+            // 2) compute totals per business and distribute profits per business
+            foreach (var b in Businesses)
+            {
+                if (!double.TryParse(b.ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double p))
+                    p = 0;
+                b.Profit = p;
+                // use property so it raises change notification
+                b.ProfitDisplay = p.ToString("C2", DisplayCulture);
+            }
+
+            // 3) reset investor totals
+            foreach (var inv in Investors)
+            {
+                inv.ProfitShare = 0;
+                inv.DisplayProfit = "$0.00";
+            }
+
+            // 4) for each business, compute contributions total and distribute that business's profit
+            foreach (var b in Businesses)
+            {
+                double totalContrib = Investors.Sum(inv => inv.Contributions.First(c => c.BusinessId == b.Id).Amount);
+
+                if (totalContrib <= 0)
+                {
+                    foreach (var inv in Investors)
+                    {
+                        var c = inv.Contributions.First(cc => cc.BusinessId == b.Id);
+                        c.ProfitShare = 0;
+                        c.DisplayProfit = 0.ToString("C2", DisplayCulture);
+                    }
+                    continue;
+                }
+
+                foreach (var inv in Investors)
+                {
+                    var c = inv.Contributions.First(cc => cc.BusinessId == b.Id);
+                    var percent = c.Amount / totalContrib; // 0..1
+                    c.ProfitShare = percent * b.Profit;
+                    c.DisplayProfit = c.ProfitShare.ToString("C2", DisplayCulture);
+
+                    // accumulate to investor total
+                    inv.ProfitShare += c.ProfitShare;
+                }
+            }
+
+            // 5) update investor display profit
+            foreach (var inv in Investors)
+            {
                 inv.DisplayProfit = inv.ProfitShare.ToString("C2", DisplayCulture);
             }
+
+            UpdateTotalsAndDisplays();
         }
 
         private void UpdateTotalsAndDisplays()
         {
-            double total = Investors.Sum(i => i.Amount);
-            TotalDisplay = total.ToString("C2", DisplayCulture);
+            double total = Investors.Sum(inv => inv.Contributions.Sum(c => c.Amount));
             TotalInvestmentDisplay = total.ToString("C2", DisplayCulture);
 
-            // update percentages
+            // Ensure investor % values reflect updated legacy Amount (sum of contributions)
             foreach (var inv in Investors)
             {
                 inv.Percentage = total > 0 ? inv.Amount / total * 100.0 : 0;
@@ -159,20 +207,16 @@ namespace HoneyKhaalaProject
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            // ensure profit distribution is up-to-date before saving
             Calculate_Click(this, new RoutedEventArgs());
 
-            // save MonthData for the currently edited month (_editingMonth)
-            var file = Path.Combine(_storageFolder, $"{_editingMonth:yyyy-MM}.txt");
-            Directory.CreateDirectory(_storageFolder);
+            var file = Path.Combine(_storage_folder, $"{_editingMonth:yyyy-MM}.json");
+            Directory.CreateDirectory(_storage_folder);
             JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };
-
-            // parse profit using same culture
-            double.TryParse(ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double profit);
 
             var monthData = new MonthData
             {
-                Profit = profit,
+                Month = _editingMonth,
+                Businesses = Businesses.Select(b => new BusinessData { Id = b.Id, Name = b.Name, Profit = b.Profit }).ToArray(),
                 Investors = Investors.ToArray()
             };
 
@@ -182,7 +226,6 @@ namespace HoneyKhaalaProject
             MessageBox.Show(this, $"Saved data for {SelectedMonthDisplay}.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // Show a context menu with current + previous months; load selected month's text file into UI.
         private void Open_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement placementTarget) return;
@@ -220,7 +263,7 @@ namespace HoneyKhaalaProject
         {
             try
             {
-                var file = Path.Combine(_storageFolder, $"{month:yyyy-MM}.txt");
+                var file = Path.Combine(_storage_folder, $"{month:yyyy-MM}.json");
                 if (!File.Exists(file))
                 {
                     MessageBox.Show(this, $"No saved data for {month:MMMM yyyy}.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -234,47 +277,75 @@ namespace HoneyKhaalaProject
                     return;
                 }
 
-                // try read wrapper first
-                try
+                var md = JsonSerializer.Deserialize<MonthData>(data);
+                if (md != null)
                 {
-                    var md = JsonSerializer.Deserialize<MonthData>(data);
-                    if (md != null && md.Investors != null)
+                    var businessByName = Businesses.ToDictionary(b => b.Name, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var bd in md.Businesses ?? Array.Empty<BusinessData>())
                     {
-                        Investors.Clear();
-                        foreach (var inv in md.Investors)
+                        if (businessByName.TryGetValue(bd.Name, out var target))
                         {
-                            inv.DisplayProfit = inv.ProfitShare.ToString("C2", DisplayCulture);
-                            Investors.Add(inv);
+                            target.Profit = bd.Profit;
+                            target.ProfitString = bd.Profit.ToString("N", DisplayCulture);
+                            target.ProfitDisplay = bd.Profit.ToString("C2", DisplayCulture);
+                        }
+                    }
+
+                    Investors.Clear();
+                    foreach (var inv in md.Investors ?? Array.Empty<Investor>())
+                    {
+                        var remapped = new List<Contribution>();
+
+                        foreach (var c in inv.Contributions.ToList())
+                        {
+                            if (!string.IsNullOrWhiteSpace(c.BusinessName) && businessByName.TryGetValue(c.BusinessName, out var bMatch))
+                            {
+                                c.BusinessId = bMatch.Id;
+                                c.BusinessName = bMatch.Name;
+                                c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
+                                remapped.Add(c);
+                            }
+                            else
+                            {
+                                var byId = Businesses.FirstOrDefault(b => b.Id == c.BusinessId);
+                                if (byId != null)
+                                {
+                                    c.BusinessName = byId.Name;
+                                    c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
+                                    remapped.Add(c);
+                                }
+                            }
                         }
 
-                        ProfitString = md.Profit.ToString("N", DisplayCulture);
-                        UpdateTotalsAndDisplays();
-                        Calculate_Click(this, new RoutedEventArgs());
-                        return;
+                        foreach (var b in Businesses)
+                        {
+                            if (!remapped.Any(x => x.BusinessId == b.Id))
+                            {
+                                remapped.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0, AmountString = "0", DisplayProfit = "$0.00" });
+                            }
+                            else
+                            {
+                                var c = remapped.First(cc => cc.BusinessId == b.Id);
+                                c.BusinessName = b.Name;
+                                c.AmountString = c.Amount.ToString("N", DisplayCulture);
+                            }
+                        }
+
+                        inv.Contributions.Clear();
+                        foreach (var c in remapped)
+                            inv.Contributions.Add(c);
+
+                        foreach (var c in inv.Contributions)
+                            c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
+
+                        Investors.Add(inv);
                     }
-                }
-                catch
-                {
-                    // ignore, try fallback
+
+                    Calculate_Click(this, new RoutedEventArgs());
+                    return;
                 }
 
-                // fallback: old format - array of investors
-                try
-                {
-                    var arr = JsonSerializer.Deserialize<Investor[]>(data);
-                    if (arr != null)
-                    {
-                        Investors.Clear();
-                        foreach (var inv in arr) Investors.Add(inv);
-                        UpdateTotalsAndDisplays();
-                        ProfitString = "0";
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, "Could not parse file: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
             }
             catch (Exception ex)
             {
@@ -284,8 +355,46 @@ namespace HoneyKhaalaProject
 
         private record MonthData
         {
-            public double Profit { get; init; }
+            public DateTime Month { get; init; }
+            public BusinessData[]? Businesses { get; init; }
             public Investor[]? Investors { get; init; }
+        }
+
+        private record BusinessData
+        {
+            public string Id { get; init; } = "";
+            public string Name { get; init; } = "";
+            public double Profit { get; init; }
+        }
+
+        public class BusinessEntry : INotifyPropertyChanged
+        {
+            public string Id { get; set; } = "";
+            public string Name { get; set; } = "";
+
+            string profitString = "0";
+            public string ProfitString
+            {
+                get => profitString;
+                set { profitString = value; OnPropertyChanged(nameof(ProfitString)); }
+            }
+
+            double profit;
+            public double Profit
+            {
+                get => profit;
+                set { profit = value; OnPropertyChanged(nameof(Profit)); }
+            }
+
+            string profitDisplay = "$0.00";
+            public string ProfitDisplay
+            {
+                get => profitDisplay;
+                set { profitDisplay = value; OnPropertyChanged(nameof(ProfitDisplay)); }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+            void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         #region INotifyPropertyChanged
