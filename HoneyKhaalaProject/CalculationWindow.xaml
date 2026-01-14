@@ -80,6 +80,7 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" /> <!-- New row for profit summary -->
 			<RowDefinition Height="*" />
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
@@ -89,7 +90,9 @@
 				<Ellipse Width="48" Height="48" Fill="White" VerticalAlignment="Center"/>
 				<StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
 					<TextBlock Text="Calculate Shares" FontSize="18" FontWeight="Bold" Foreground="White"/>
-					<TextBlock Text="Enter investors and click Save Snapshot to persist this month's data" FontSize="12" Foreground="#A8B0C0"/>
+					<TextBlock Text="Enter investors and click Save to persist this month's data" FontSize="12" Foreground="#A8B0C0"/>
+					<!-- show which month is being edited -->
+					<TextBlock Text="{Binding SelectedMonthDisplay}" FontSize="12" Foreground="#9CA3AF" Margin="0,6,0,0"/>
 				</StackPanel>
 			</StackPanel>
 		</Border>
@@ -99,15 +102,25 @@
             <Button Content="Calculate" Width="140" Click="Calculate_Click" Background="#2563EB" Foreground="White" Margin="14,10,0,0"/>
             <Button Content="Save" Width="140" Click="Save_Click" Background="Green" Foreground="White" Margin="14,10,0,0"/>
             <Button Content="Open" Width="140" Click="Open_Click" Background="Brown" Foreground="White" Margin="14,10,0,0"/>
-
-            <TextBlock Text="Total Investment:" FontSize="14" FontWeight="Bold" Margin="18,12,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding TotalInvestmentDisplay}" FontSize="14" FontWeight="Bold" Margin="0,12,6,0" VerticalAlignment="Center"/>
-
-            <TextBlock Text="Profit:" FontSize="14" FontWeight="Bold" Margin="12,12,6,0" VerticalAlignment="Center"/>
-            <TextBox Text="{Binding ProfitString, UpdateSourceTrigger=PropertyChanged}" Width="100" Height="28" Margin="0,10,0,0" VerticalAlignment="Center"/>
 		</StackPanel>
 
-		<ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="2">
+		<!-- New totals/profit summary row -->
+		<Border Grid.Row="2" Background="White" CornerRadius="12" Padding="18" Margin="18,8,18,8" BorderBrush="#2563EB" BorderThickness="2" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <TextBlock Text="Total Investment" FontSize="14" FontWeight="SemiBold" Foreground="#2563EB" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalInvestmentDisplay}" FontSize="18" FontWeight="Bold" Foreground="#111827" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <TextBlock Text="Total Profit" FontSize="14" FontWeight="SemiBold" Foreground="#2563EB" HorizontalAlignment="Center"/>
+                    <!-- editable profit -->
+                    <TextBox Text="{Binding ProfitString, UpdateSourceTrigger=PropertyChanged}" Width="140" Height="34" FontSize="16" HorizontalContentAlignment="Center" BorderThickness="0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+		<ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="3">
             <Border Background="White" CornerRadius="12" Padding="14" Margin="0,0,0,12" BorderBrush="Black" BorderThickness="5">
 				<StackPanel>
 					<TextBlock Text="Investors" FontSize="30" HorizontalAlignment="Center" FontFamily="Bahnschrift"/>
@@ -125,7 +138,7 @@
 										<TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" Height="28"/>
 									</StackPanel>
 									
-										
+	
 									<Button Content="Remove" Width="70" Height="28"  VerticalAlignment="Bottom" Margin="20,0,0,0" Click="RemoveInvestor_Click" Tag="{Binding}" />
 									
 								</DockPanel>
@@ -136,18 +149,19 @@
 			</Border>
 		</ScrollViewer>
 
-		<ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="3">
+		<ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="4">
 			<Border Background="White" CornerRadius="12" Padding="14" BorderBrush="Black" BorderThickness="5">
 				<StackPanel>
                     <TextBlock Text="Percentages" FontSize="30" FontFamily="Bahnschrift" HorizontalAlignment="Center"/>
-					<ListBox ItemsSource="{Binding Investors}" Margin="0,10,0,0" Width="410">
+					<ListBox ItemsSource="{Binding Investors}" Margin="0,10,0,0" Width="460">
 						<ListBox.ItemTemplate>
 							<DataTemplate>
 								<StackPanel Margin="0,8,0,8">
 									<DockPanel>
-										<TextBlock Text="{Binding Name}" FontWeight="Bold" Width="200"/>
+										<TextBlock Text="{Binding Name}" FontWeight="Bold" Width="140"/>
 										<TextBlock Text="{Binding Amount, StringFormat=C2}" Width="120" HorizontalAlignment="Right" Foreground="#111827"/>
-										<TextBlock Text="{Binding Percentage, StringFormat=F1}" Width="80" HorizontalAlignment="Right" Foreground="#6B7280"/>
+										<TextBlock Text="{Binding Percentage, StringFormat={}{0:F2} %}" Width="80" HorizontalAlignment="Right" Foreground="#6B7280"/>
+										<TextBlock Text="{Binding DisplayProfit}" Width="100" HorizontalAlignment="Right" Foreground="#0F172A" FontWeight="SemiBold"/>
 									</DockPanel>
 
 									<Grid Margin="0,6,0,0" Height="26">

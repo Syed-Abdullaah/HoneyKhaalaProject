@@ -1,8 +1,8 @@
 ﻿using HoneyKhaalaProject.VM;
 using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Controls;
 
 namespace HoneyKhaalaProject
 {
@@ -48,13 +48,17 @@ namespace HoneyKhaalaProject
             }
         }
 
-        private void PreviousMonth_Click(object? sender, RoutedEventArgs e)
+        // New handler: open CalculationWindow for selected previous month so user can view/edit investors and profit
+        private void PreviousMonth_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button b && b.Tag is DateTime month && VM != null)
             {
-                var calc = new CalculationWindow(VM.StorageFolder, month) { Owner = this };
+                var calc = new CalculationWindow(VM.StorageFolder, month)
+                {
+                    Owner = this
+                };
                 calc.ShowDialog();
-                VM.RefreshMonths();
+                VM.RefreshMonths(); // refresh UI after possible save
             }
         }
     }

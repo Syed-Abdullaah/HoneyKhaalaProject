@@ -9,6 +9,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -20,6 +21,9 @@ namespace HoneyKhaalaProject
 {
     public partial class CalculationWindow : Window, INotifyPropertyChanged
     {
+        // force dollar formatting for display/parsing
+        readonly CultureInfo DisplayCulture = CultureInfo.GetCultureInfo("en-US");
+
         string totalDisplay = "$0.00";
         public string TotalDisplay
         {
@@ -42,8 +46,22 @@ namespace HoneyKhaalaProject
         }
 
         public ObservableCollection<Investor> Investors { get; } = new ObservableCollection<Investor>();
-
+        public string SelectedMonthDisplay
+        {
+            get => selectedMonthDisplay;
+            set
+            {
+                if (selectedMonthDisplay != value)
+                {
+                    selectedMonthDisplay = value;
+                    OnPropertyChanged(nameof(SelectedMonthDisplay));
+                }
+            }
+        }
         private readonly string _storageFolder;
+        private DateTime _editingMonth;
+        // Add this property to the CalculationWindow class to fix CS0103
+        private string selectedMonthDisplay = "";
 
         [Obsolete("For designer support only. Use other overload for normal construction.")]
         public CalculationWindow()
@@ -53,6 +71,9 @@ namespace HoneyKhaalaProject
 
             InitializeComponent();
             this.DataContext = this;
+
+            _editingMonth = DateTime.Now;
+            SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
             CreateDummyInvestors();
         }
 
@@ -66,27 +87,27 @@ namespace HoneyKhaalaProject
             InitializeComponent();
             this.DataContext = this;
 
+            _editingMonth = DateTime.Now;
+            // Replace this line in the obsolete constructor:
+            // SelecteditMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
+            // with:
+            SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
             CreateDummyInvestors();
         }
 
         public CalculationWindow(string storageFolder, DateTime month) : this(storageFolder)
         {
-            // load the selected month's data into the window (shows data if file exists)
+            _editingMonth = month;
+            SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
             LoadMonthFile(month);
         }
 
         private void CreateDummyInvestors()
         {
-            // start with two example rows to make UI friendlier
             Investors.Add(new Investor { Name = "Investor A", Amount = 10000 });
             Investors.Add(new Investor { Name = "Investor B", Amount = 10000 });
             Investors.Add(new Investor { Name = "Investor C", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor D", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor E", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor F", Amount = 10000 });
-            Investors.Add(new Investor { Name = "Investor G", Amount = 10000 });
 
-            // update totals for initial data
             UpdateTotalsAndDisplays();
         }
 
@@ -111,27 +132,23 @@ namespace HoneyKhaalaProject
             // compute totals
             UpdateTotalsAndDisplays();
 
-            // parse profit (silent zero for invalid)
-            if (!double.TryParse(ProfitString, out double profit))
+            // parse profit allowing currency symbol (use explicit culture)
+            if (!double.TryParse(ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double profit))
                 profit = 0;
 
             // distribute profit based on percentage (percentage is 0..100)
             foreach (var inv in Investors)
             {
-                if (inv.Percentage > 0)
-                    inv.ProfitShare = inv.Percentage / 100.0 * profit;
-                else
-                    inv.ProfitShare = 0;
-
-                inv.DisplayProfit = inv.ProfitShare.ToString("C2");
+                inv.ProfitShare = inv.Percentage > 0 ? inv.Percentage / 100.0 * profit : 0;
+                inv.DisplayProfit = inv.ProfitShare.ToString("C2", DisplayCulture);
             }
         }
 
         private void UpdateTotalsAndDisplays()
         {
             double total = Investors.Sum(i => i.Amount);
-            TotalDisplay = total.ToString("C2");
-            TotalInvestmentDisplay = total.ToString("C2");
+            TotalDisplay = total.ToString("C2", DisplayCulture);
+            TotalInvestmentDisplay = total.ToString("C2", DisplayCulture);
 
             // update percentages
             foreach (var inv in Investors)
@@ -142,12 +159,16 @@ namespace HoneyKhaalaProject
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            // save a small wrapper so profit & investor profit shares are persisted
-            var file = Path.Combine(_storageFolder, $"{DateTime.Now:yyyy-MM}.txt");
+            // ensure profit distribution is up-to-date before saving
+            Calculate_Click(this, new RoutedEventArgs());
+
+            // save MonthData for the currently edited month (_editingMonth)
+            var file = Path.Combine(_storageFolder, $"{_editingMonth:yyyy-MM}.txt");
+            Directory.CreateDirectory(_storageFolder);
             JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };
 
-            // try parse profit, default to 0
-            double.TryParse(ProfitString, out double profit);
+            // parse profit using same culture
+            double.TryParse(ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double profit);
 
             var monthData = new MonthData
             {
@@ -157,6 +178,8 @@ namespace HoneyKhaalaProject
 
             var data = System.Text.Json.JsonSerializer.Serialize(monthData, options);
             File.WriteAllText(file, data);
+
+            MessageBox.Show(this, $"Saved data for {SelectedMonthDisplay}.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // Show a context menu with current + previous months; load selected month's text file into UI.
@@ -166,13 +189,12 @@ namespace HoneyKhaalaProject
 
             var menu = new ContextMenu();
 
-            // include current month (i = 0) and previous 11 months (adjust count as desired)
             for (int i = 0; i <= 11; i++)
             {
                 var m = DateTime.Now.AddMonths(-i);
                 var mi = new MenuItem
                 {
-                    Header = m.ToString("MMMM yyyy"),
+                    Header = m.ToString("MMMM yyyy", DisplayCulture),
                     Tag = m
                 };
                 mi.Click += MonthMenuItem_Click;
@@ -188,6 +210,8 @@ namespace HoneyKhaalaProject
         {
             if (sender is MenuItem mi && mi.Tag is DateTime month)
             {
+                _editingMonth = month;
+                SelectedMonthDisplay = _editingMonth.ToString("MMMM yyyy", DisplayCulture);
                 LoadMonthFile(month);
             }
         }
@@ -199,7 +223,6 @@ namespace HoneyKhaalaProject
                 var file = Path.Combine(_storageFolder, $"{month:yyyy-MM}.txt");
                 if (!File.Exists(file))
                 {
-                    // nothing to load
                     MessageBox.Show(this, $"No saved data for {month:MMMM yyyy}.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
@@ -220,14 +243,12 @@ namespace HoneyKhaalaProject
                         Investors.Clear();
                         foreach (var inv in md.Investors)
                         {
-                            // populate display profit string if profit share exists
-                            inv.DisplayProfit = inv.ProfitShare.ToString("C2");
+                            inv.DisplayProfit = inv.ProfitShare.ToString("C2", DisplayCulture);
                             Investors.Add(inv);
                         }
 
-                        ProfitString = md.Profit.ToString();
+                        ProfitString = md.Profit.ToString("N", DisplayCulture);
                         UpdateTotalsAndDisplays();
-                        // recompute profit shares if they were not serialized
                         Calculate_Click(this, new RoutedEventArgs());
                         return;
                     }
@@ -244,11 +265,8 @@ namespace HoneyKhaalaProject
                     if (arr != null)
                     {
                         Investors.Clear();
-                        foreach (var inv in arr)
-                            Investors.Add(inv);
-
+                        foreach (var inv in arr) Investors.Add(inv);
                         UpdateTotalsAndDisplays();
-                        // clear profit if none present
                         ProfitString = "0";
                         return;
                     }
@@ -272,7 +290,6 @@ namespace HoneyKhaalaProject
 
         #region INotifyPropertyChanged
         public event PropertyChangedEventHandler? PropertyChanged;
-
         void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         #endregion
     }

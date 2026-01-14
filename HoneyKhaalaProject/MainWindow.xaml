@@ -16,7 +16,7 @@
             <TextBlock Text="Click a previous month to open its data file. Click Current Month to open the calculation page." 
                        FontSize="12" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
-            <!-- Previous 5 months -->
+            <!-- Previous months: use Click handler to open in-app editor -->
             <ItemsControl Margin="0,8,0,12" ItemsSource="{Binding PreviousMonths}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -26,14 +26,13 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button Width="96" Height="96" Margin="6"
-                                            FontWeight="SemiBold"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center"
-                                            Background="White"
-                                            BorderThickness="1"
-                                            Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.OpenMonthFileCommand}"
-                                            CommandParameter="{Binding}"
-                                            Tag="{Binding}">
+                                    FontWeight="SemiBold"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Background="White"
+                                    BorderThickness="1"
+                                    Click="PreviousMonth_Click"
+                                    Tag="{Binding}">
                             <TextBlock TextAlignment="Center">
                                 <Run Text="{Binding Mode=OneWay, StringFormat=MMMM}" />
                                 <LineBreak/>
