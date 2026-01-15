@@ -16,6 +16,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace HoneyKhaalaProject
 {
@@ -73,9 +75,49 @@ namespace HoneyKhaalaProject
             LoadMonthFile(month);
         }
 
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            // Select the text in a TextBox when it receives focus.
+            EventManager.RegisterClassHandler(typeof(TextBox), TextBox.PreviewMouseLeftButtonDownEvent,
+                new MouseButtonEventHandler(SelectivelyIgnoreMouseButton));
+            EventManager.RegisterClassHandler(typeof(TextBox), TextBox.GotKeyboardFocusEvent,
+                new RoutedEventHandler(SelectAllText));
+            EventManager.RegisterClassHandler(typeof(TextBox), TextBox.MouseDoubleClickEvent,
+                new RoutedEventHandler(SelectAllText));
+        }
+
+        void SelectivelyIgnoreMouseButton(object sender, MouseButtonEventArgs e)
+        {
+            // Find the TextBox
+            DependencyObject parent = e.OriginalSource as UIElement;
+            while (parent != null && !(parent is TextBox))
+                parent = VisualTreeHelper.GetParent(parent);
+
+            if (parent != null)
+            {
+                var textBox = (TextBox)parent;
+                if (!textBox.IsKeyboardFocusWithin)
+                {
+                    // If the text box is not yet focused, give it the focus and
+                    // stop further processing of this click event.
+                    textBox.Focus();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        void SelectAllText(object sender, RoutedEventArgs e)
+        {
+            var textBox = e.OriginalSource as TextBox;
+            if (textBox != null)
+                textBox.SelectAll();
+        }
+
         void InitializeBusinesses()
         {
-            var list = new []
+            var list = new[]
             {
                 "Right Choice Enterprise ltd",
                 "Clinical Diagnostic Services Ltd",
@@ -86,7 +128,7 @@ namespace HoneyKhaalaProject
 
             Businesses.Clear();
             foreach (var b in list)
-                Businesses.Add(new BusinessEntry { Id = Guid.NewGuid().ToString(), Name = b, ProfitString = "0", ProfitDisplay = "$0.00" });
+                Businesses.Add(new BusinessEntry { Id = Guid.NewGuid().ToString(), Name = b, Profit = 0 });
         }
 
         private void CreateDummyInvestors()
@@ -102,9 +144,14 @@ namespace HoneyKhaalaProject
             var inv = new Investor { Name = name, Amount = defaultAmount };
             foreach (var b in Businesses)
             {
-                inv.Contributions.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0, AmountString = "0" });
+                inv.Contributions.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0 });
             }
             Investors.Add(inv);
+
+            foreach (var b in Businesses)
+            {
+                b.Total = Investors.SelectMany(i => i.Contributions.Where(c => c.BusinessId == b.Id)).Sum(c => c.Amount);
+            }
         }
 
         private void AddInvestor_Click(object sender, RoutedEventArgs e)
@@ -128,25 +175,8 @@ namespace HoneyKhaalaProject
             // 1) parse contributions' text values into numeric Amount before calculations
             foreach (var inv in Investors)
             {
-                foreach (var c in inv.Contributions)
-                {
-                    if (!double.TryParse(c.AmountString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double v))
-                        v = 0;
-                    c.Amount = v;
-                }
-
                 // NEW: update investor legacy Amount to the sum of their contributions so UI and percentage use the correct total
                 inv.Amount = inv.Contributions.Sum(c => c.Amount);
-            }
-
-            // 2) compute totals per business and distribute profits per business
-            foreach (var b in Businesses)
-            {
-                if (!double.TryParse(b.ProfitString, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, DisplayCulture, out double p))
-                    p = 0;
-                b.Profit = p;
-                // use property so it raises change notification
-                b.ProfitDisplay = p.ToString("C2", DisplayCulture);
             }
 
             // 3) reset investor totals
@@ -167,7 +197,6 @@ namespace HoneyKhaalaProject
                     {
                         var c = inv.Contributions.First(cc => cc.BusinessId == b.Id);
                         c.ProfitShare = 0;
-                        c.DisplayProfit = 0.ToString("C2", DisplayCulture);
                     }
                     continue;
                 }
@@ -177,11 +206,12 @@ namespace HoneyKhaalaProject
                     var c = inv.Contributions.First(cc => cc.BusinessId == b.Id);
                     var percent = c.Amount / totalContrib; // 0..1
                     c.ProfitShare = percent * b.Profit;
-                    c.DisplayProfit = c.ProfitShare.ToString("C2", DisplayCulture);
 
                     // accumulate to investor total
                     inv.ProfitShare += c.ProfitShare;
                 }
+
+                b.Total = Investors.SelectMany(i => i.Contributions.Where(c => c.BusinessId == b.Id)).Sum(c => c.Amount);
             }
 
             // 5) update investor display profit
@@ -216,7 +246,7 @@ namespace HoneyKhaalaProject
             var monthData = new MonthData
             {
                 Month = _editingMonth,
-                Businesses = Businesses.Select(b => new BusinessData { Id = b.Id, Name = b.Name, Profit = b.Profit }).ToArray(),
+                Businesses = Businesses.Select(b => new BusinessEntry { Id = b.Id, Name = b.Name, Profit = b.Profit }).ToArray(),
                 Investors = Investors.ToArray()
             };
 
@@ -282,13 +312,11 @@ namespace HoneyKhaalaProject
                 {
                     var businessByName = Businesses.ToDictionary(b => b.Name, StringComparer.OrdinalIgnoreCase);
 
-                    foreach (var bd in md.Businesses ?? Array.Empty<BusinessData>())
+                    foreach (var bd in md.Businesses ?? Array.Empty<BusinessEntry>())
                     {
                         if (businessByName.TryGetValue(bd.Name, out var target))
                         {
                             target.Profit = bd.Profit;
-                            target.ProfitString = bd.Profit.ToString("N", DisplayCulture);
-                            target.ProfitDisplay = bd.Profit.ToString("C2", DisplayCulture);
                         }
                     }
 
@@ -303,7 +331,6 @@ namespace HoneyKhaalaProject
                             {
                                 c.BusinessId = bMatch.Id;
                                 c.BusinessName = bMatch.Name;
-                                c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
                                 remapped.Add(c);
                             }
                             else
@@ -312,7 +339,6 @@ namespace HoneyKhaalaProject
                                 if (byId != null)
                                 {
                                     c.BusinessName = byId.Name;
-                                    c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
                                     remapped.Add(c);
                                 }
                             }
@@ -322,22 +348,18 @@ namespace HoneyKhaalaProject
                         {
                             if (!remapped.Any(x => x.BusinessId == b.Id))
                             {
-                                remapped.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0, AmountString = "0", DisplayProfit = "$0.00" });
+                                remapped.Add(new Contribution { BusinessId = b.Id, BusinessName = b.Name, Amount = 0 });
                             }
                             else
                             {
                                 var c = remapped.First(cc => cc.BusinessId == b.Id);
                                 c.BusinessName = b.Name;
-                                c.AmountString = c.Amount.ToString("N", DisplayCulture);
                             }
                         }
 
                         inv.Contributions.Clear();
                         foreach (var c in remapped)
                             inv.Contributions.Add(c);
-
-                        foreach (var c in inv.Contributions)
-                            c.AmountString = string.IsNullOrWhiteSpace(c.AmountString) ? c.Amount.ToString("N", DisplayCulture) : c.AmountString;
 
                         Investors.Add(inv);
                     }
@@ -351,50 +373,6 @@ namespace HoneyKhaalaProject
             {
                 MessageBox.Show(this, "Could not open file: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private record MonthData
-        {
-            public DateTime Month { get; init; }
-            public BusinessData[]? Businesses { get; init; }
-            public Investor[]? Investors { get; init; }
-        }
-
-        private record BusinessData
-        {
-            public string Id { get; init; } = "";
-            public string Name { get; init; } = "";
-            public double Profit { get; init; }
-        }
-
-        public class BusinessEntry : INotifyPropertyChanged
-        {
-            public string Id { get; set; } = "";
-            public string Name { get; set; } = "";
-
-            string profitString = "0";
-            public string ProfitString
-            {
-                get => profitString;
-                set { profitString = value; OnPropertyChanged(nameof(ProfitString)); }
-            }
-
-            double profit;
-            public double Profit
-            {
-                get => profit;
-                set { profit = value; OnPropertyChanged(nameof(Profit)); }
-            }
-
-            string profitDisplay = "$0.00";
-            public string ProfitDisplay
-            {
-                get => profitDisplay;
-                set { profitDisplay = value; OnPropertyChanged(nameof(ProfitDisplay)); }
-            }
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-            void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         #region INotifyPropertyChanged

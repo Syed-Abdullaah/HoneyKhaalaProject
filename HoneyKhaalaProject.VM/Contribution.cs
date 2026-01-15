@@ -14,16 +14,9 @@ namespace HoneyKhaalaProject.VM
         [ObservableProperty]
         double amount;
 
-        // string-backed input so the TextBox always shows/edit text reliably
-        [ObservableProperty]
-        string amountString = "0";
-
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof (HalfAmount))]
         double profitShare;
-
-        [ObservableProperty]
-        string displayProfit = "$0.00";
 
         public double HalfAmount => ProfitShare / 2;
     }

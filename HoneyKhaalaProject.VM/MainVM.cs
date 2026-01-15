@@ -32,9 +32,12 @@ namespace HoneyKhaalaProject.VM
             CurrentMonth = $"{DateTime.Now.ToString("MMMM yyyy", CultureInfo.CurrentCulture)} — Open Calculation";
 
             PreviousMonths.Clear();
-            for (int i = 1; i <= 11; i++)
+            var cur = new DateTime(2025, 2, 1);
+            var end = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            while (cur <= end)
             {
-                PreviousMonths.Add(DateTime.Now.AddMonths(-i));
+                PreviousMonths.Add(cur);
+                cur = cur.AddMonths(1);
             }
         }
 

@@ -113,40 +113,42 @@
             <StackPanel>
                 <TextBlock Text="Summary" FontSize="24" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center" Margin="0,0,0,8"
                            ToolTip="Summary of totals and per-business profit inputs"/>
-                <ListBox Width="1350" ToolTip="Summary list (total investment and per-business profits)">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Background="#F1F5F9" CornerRadius="8" Padding="8" Margin="8,0,8,0" BorderBrush="#2563EB" BorderThickness="3">
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                                <TextBlock Text="Total Investment" FontSize="14" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Border Background="#F1F5F9" CornerRadius="8" Padding="8" Margin="8,0,8,0" BorderBrush="#2563EB" BorderThickness="3">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Total Investment" FontSize="14" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"
                                            ToolTip="Sum of all contributions across all businesses"/>
-                                <TextBlock Text="{Binding TotalInvestmentDisplay}" FontSize="18" FontWeight="Bold" Foreground="#111827" HorizontalAlignment="Center" Margin="10"
+                            <TextBlock Text="{Binding TotalInvestmentDisplay}" FontSize="18" FontWeight="Bold" Foreground="#111827" HorizontalAlignment="Center" Margin="10"
                                            ToolTip="Formatted total investment"/>
-                            </StackPanel>
-                        </Border>
-                        <ItemsControl ItemsSource="{Binding Businesses}" Margin="12,0,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#F1F5F9" CornerRadius="8" Padding="8" Margin="8,0,8,0" BorderBrush="#2563EB" BorderThickness="1">
-                                        <StackPanel Width="200">
-                                            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"
+                        </StackPanel>
+                    </Border>
+                    <ListBox Width="1350" ToolTip="Summary list (total investment and per-business profits)" ItemsSource="{Binding Businesses}" Margin="12,0,0,0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#F1F5F9" CornerRadius="8" Padding="8" Margin="8,0,8,0" BorderBrush="#2563EB" BorderThickness="1">
+                                    <StackPanel Width="200">
+                                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"
                                                        ToolTip="Business name"/>
-                                            <TextBox Text="{Binding ProfitString, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="14" HorizontalContentAlignment="Center" ToolTip="Enter profit for this business (number or currency)"/>
-                                            <TextBlock Text="{Binding ProfitDisplay}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
-                                                       ToolTip="Formatted profit for this business"/>
-                                            <TextBlock Text="{Binding ProfitDisplay}" FontSize="20" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                        <TextBox Text="{Binding Profit, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="14" HorizontalContentAlignment="Center" ToolTip="Enter profit for this business (number or currency)"/>
+                                        <TextBlock Text="{Binding Total, StringFormat=C2}" FontSize="30" HorizontalAlignment="Center" Margin="0,4,0,0"
                                                        ToolTip="Total investment in this buisness"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ListBox>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
             </StackPanel>
         </Border>
 
@@ -171,12 +173,12 @@
                                                     <StackPanel Orientation="Horizontal"/>
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
-                                            
+
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Margin="16,0,16,0">
                                                         <TextBlock Text="{Binding BusinessName}" FontSize="11" Foreground="#6B7280" TextAlignment="Center" ToolTip="Business for this contribution"/>
-                                                        <TextBox Text="{Binding AmountString, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center" ToolTip="Enter amount contributed to this business (numbers only)"/>
+                                                        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center" ToolTip="Enter amount contributed to this business (numbers only)"/>
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*" />

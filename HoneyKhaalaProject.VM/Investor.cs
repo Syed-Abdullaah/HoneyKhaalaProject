@@ -28,5 +28,7 @@ namespace HoneyKhaalaProject.VM
 
         // contributions per business
         public ObservableCollection<Contribution> Contributions { get; set;  } = new();
+
+        public double BuisnessTotalInvestment => Contributions.Sum(c=> c.Amount);
     }
 }
