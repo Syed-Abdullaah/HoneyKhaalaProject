@@ -1,4 +1,4 @@
-# HoneyKhaalaProject
+# ProfitCalculationProject
 
 A Windows desktop application built with **C# and WPF** for managing investor contributions, business investments, and monthly profit distribution.
 
@@ -31,23 +31,23 @@ The application allows multiple investors to contribute different amounts to mul
 ## 🏗️ Project Structure
 
 ```text
-HoneyKhaalaProject/
+ProfitCalculationProject/
 │
-├── HoneyKhaalaProject/
+├── ProfitCalculationProject/
 │   ├── MainWindow.xaml
 │   ├── MainWindow.xaml.cs
 │   ├── CalculationWindow.xaml
 │   ├── CalculationWindow.xaml.cs
 │   └── ...
 │
-├── HoneyKhaalaProject.VM/
+├── ProfitCalculationProject.VM/
 │   ├── MainVM.cs
 │   ├── Investor.cs
 │   ├── Contribution.cs
 │   ├── BusinessEntry.cs
 │   └── MonthData.cs
 │
-└── HoneyKhaalaProject.sln
+└── ProfitCalculationProject.sln
 ```
 
 ### Architecture
@@ -89,7 +89,7 @@ The application then combines the investor's profit shares from all businesses t
 Monthly data is stored locally as JSON files in the user's application data directory:
 
 ```text
-%AppData%\HoneyKhaalaProject\Months
+%AppData%\ProfitCalculationProject\Months
 ```
 
 Each month's data is stored separately using a format such as:
@@ -115,13 +115,13 @@ This allows previous months to be opened and edited without affecting other reco
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Syed-Abdullaah/HoneyKhaalaProject.git
+git clone https://github.com/Syed-Abdullaah/ProfitCalculationProject.git
 ```
 
 2. Open:
 
 ```text
-HoneyKhaalaProject.sln
+ProfitCalculationProject.sln
 ```
 
 3. Restore the NuGet packages.
@@ -162,7 +162,7 @@ This project was built as a practical C# application and helped me develop exper
 
 Possible improvements include:
 
-* [ ] Move more business logic from code-behind into View Models
+* [ ] Move more business logic from code-behind into ViewModels
 * [ ] Add charts and visual analytics
 * [ ] Add stronger input validation
 * [ ] Add database support
@@ -179,6 +179,6 @@ This project represents an earlier stage of my C# development journey and is par
 
 ---
 
-**Author:** Syed-Abdullah
+**Author:** Syed-Abdullaah
 
 **GitHub:** https://github.com/Syed-Abdullaah
